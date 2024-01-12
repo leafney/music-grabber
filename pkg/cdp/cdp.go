@@ -11,14 +11,19 @@ package cdp
 import (
 	"context"
 	"github.com/chromedp/chromedp"
+	"github.com/leafney/music-grabber/pkg/vars"
 	"log"
 	"time"
 )
 
 func StartBrowser() {
-	ctx, cancel := chromedp.NewExecAllocator(context.Background(),
-		chromedp.ExecPath("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"),
-	)
+	opts := []chromedp.ExecAllocatorOption{
+		chromedp.NoFirstRun,
+		chromedp.NoDefaultBrowserCheck,
+		chromedp.ExecPath(vars.MacOSChromePath),
+	}
+
+	ctx, cancel := chromedp.NewExecAllocator(context.Background(), opts...)
 	defer cancel()
 	ctx, cancel = chromedp.NewContext(ctx)
 	defer cancel()

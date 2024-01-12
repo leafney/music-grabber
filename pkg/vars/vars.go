@@ -9,6 +9,6 @@
 package vars
 
 const (
-	MacOSChromePath string = `/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome`
-	MacOSEdgePath   string = `/Applications/Microsoft\ Edge.app/Contents/MacOS/Microsoft\ Edge`
+	MacOSChromePath string = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+	MacOSEdgePath   string = "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
 )
