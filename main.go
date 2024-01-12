@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
+	"github.com/leafney/music-grabber/pkg/cdp"
 )
 
 func main() {
@@ -21,7 +22,8 @@ func main() {
 	w.SetContent(container.NewVBox(
 		hello,
 		widget.NewButton("Hi", func() {
-			hello.SetText("Welcome!")
+			//hello.SetText("Welcome!")
+			cdp.StartBrowser()
 		}),
 	))
 
