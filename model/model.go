@@ -18,3 +18,8 @@ type TargetId struct {
 	Type    int
 	BaseCtx context.Context
 }
+
+type UrlLink struct {
+	Url string
+	Ctx context.Context
+}
