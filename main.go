@@ -13,7 +13,7 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/widget"
-	"github.com/leafney/music-grabber/pkg/cdp"
+	"github.com/leafney/music-grabber/pkg/cdper"
 )
 
 func main() {
@@ -25,7 +25,7 @@ func main() {
 		hello,
 		widget.NewButton("Browser", func() {
 			//hello.SetText("Welcome!")
-			cdp.StartBrowser()
+			cdper.StartBrowser()
 		}),
 	))
 
