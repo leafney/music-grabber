@@ -4,6 +4,7 @@ go 1.21.4
 
 require (
 	fyne.io/fyne/v2 v2.4.3
+	fyne.io/x/fyne v0.0.0-20231231230942-0b5901d0781a
 	github.com/chromedp/cdproto v0.0.0-20240102194822-c006b26f21c7
 	github.com/chromedp/chromedp v0.9.3
 	github.com/leafney/rose v0.8.0
