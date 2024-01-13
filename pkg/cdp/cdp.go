@@ -10,8 +10,8 @@ package cdp
 
 import (
 	"context"
-	"github.com/chromedp/cdproto/fetch"
 	"github.com/chromedp/cdproto/network"
+	"github.com/chromedp/cdproto/target"
 	"github.com/chromedp/chromedp"
 	"github.com/leafney/music-grabber/pkg/vars"
 	"github.com/leafney/rose"
@@ -32,11 +32,16 @@ func StartBrowser() {
 	ctx, cancel = chromedp.NewContext(ctx)
 	defer cancel()
 
-	InterceptResponse(ctx)
+	//InterceptResponse(ctx)
+	InterceptResponsePlus(ctx)
+
+	targetCh := chromedp.WaitNewTarget(ctx, func(info *target.Info) bool {
+		log.Println("打开了新tab")
+		return info.URL != ""
+	})
 
 	// 启动Chrome浏览器
 	err := chromedp.Run(ctx,
-		fetch.Enable(),
 		network.Enable(),
 		chromedp.Navigate("https://www.fangpi.net/"),
 	)
@@ -45,6 +50,14 @@ func StartBrowser() {
 	}
 
 	//time.Sleep(10 * time.Second)
+
+	newTagCtx, cancel := chromedp.NewContext(ctx, chromedp.WithTargetID(<-targetCh))
+	defer cancel()
+	log.Println("获取到了新的tab")
+
+	InterceptResponsePlus(newTagCtx)
+
+	chromedp.Run(newTagCtx)
 
 	select {}
 }
@@ -63,19 +76,57 @@ func InterceptResponse(ctx context.Context) func(event interface{}) {
 
 				log.Println("拦截到音乐文件链接 ", respUrl)
 
-				//go func() {
-				//	c := chromedp.FromContext(ctx)
-				//	ctx := cdp.WithExecutor(ctx, c.Target)
-				//	if body, err := network.GetResponseBody(ev.RequestID).Do(ctx); err == nil {
-				//		data := string(body)
-				//
-				//		fmt.Println("----------得到内容↓↓↓↓↓↓↓↓↓---------------")
-				//		fmt.Println(data)
-				//		fmt.Println("----------得到内容↑↑↑↑↑↑↑↑↑---------------")
-				//		//res <- body
-				//	}
-				//}()
 			}
 		}
 	}
+}
+
+func InterceptResponsePlus(ctx context.Context) {
+	//eveMap := make(map[string]string)
+	chromedp.ListenTarget(ctx, func(event interface{}) {
+		switch ev := event.(type) {
+		case *network.EventRequestWillBeSent:
+
+			theUrl := ev.Request.URL
+
+			//log.Println("url ", theUrl)
+
+			if ev.Type != network.ResourceTypeMedia {
+				break
+			}
+
+			log.Println("the media url", theUrl)
+
+			if rose.StrAnyContains(theUrl, "mp3", "m4a") {
+				log.Println("拦截到音乐文件链接 ", theUrl)
+			}
+
+			//reqID := ev.RequestID
+			//eveKey := rose.Md5HashStr(reqID.String())
+			//eveMap[eveKey]=
+
+		case *network.EventLoadingFinished:
+		//reqID := ev.RequestID
+		//eveKey := rose.Md5HashStr(reqID.String())
+
+		//execCtx := cdp.WithExecutor(theCtx, chromedp.FromContext(theCtx).Target)
+
+		//go func() {
+		//	c := chromedp.FromContext(ctx)
+		//	ctx := cdp.WithExecutor(ctx, c.Target)
+		//	if body, err := network.GetResponseBody(ev.RequestID).Do(ctx); err == nil {
+		//		data := string(body)
+		//
+		//		fmt.Println("----------得到内容↓↓↓↓↓↓↓↓↓---------------")
+		//		fmt.Println(data)
+		//		fmt.Println("----------得到内容↑↑↑↑↑↑↑↑↑---------------")
+		//		//res <- body
+		//	}
+		//}()
+
+		case *target.EventTargetCreated:
+			//ev.TargetInfo.OpenerID
+			log.Println("创建了新Tab页")
+		}
+	})
 }
