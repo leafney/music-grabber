@@ -15,6 +15,6 @@ import (
 
 type TargetId struct {
 	Id      target.ID
-	Type    string
+	Type    int
 	BaseCtx context.Context
 }

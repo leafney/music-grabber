@@ -40,8 +40,11 @@ func StartBrowser() {
 	//chromedp.ListenTarget(ctx, InterceptResponse())
 
 	tIdCh := make(chan model.TargetId, 100)
+	urlCh := make(chan string, 100)
 
-	InterceptResponsePlus(ctx, tIdCh)
+	InterceptResponse(ctx, tIdCh, urlCh)
+
+	//InterceptResponsePlus(ctx, tIdCh)
 
 	//targetCh := chromedp.WaitNewTarget(ctx, func(info *target.Info) bool {
 	//	log.Println("打开了新tab")
@@ -51,8 +54,8 @@ func StartBrowser() {
 	// 启动Chrome浏览器
 	err := chromedp.Run(ctx,
 		network.Enable(),
-		//chromedp.Navigate("https://www.fangpi.net/"),
-		chromedp.Navigate("https://y.qq.com/"),
+		chromedp.Navigate("https://www.fangpi.net/"),
+		//chromedp.Navigate("https://y.qq.com/"),
 	)
 	if err != nil {
 		log.Fatal(err)
@@ -88,80 +91,119 @@ func StartBrowser() {
 
 	go func() {
 		for c := range tIdCh {
-			log.Printf("[INFO] id [%v] type [%v]", c.Id, c.Type)
+			//log.Printf("[INFO] id [%v] type [%v]", c.Id, c.Type)
 
 			newTabCtx, _ := chromedp.NewContext(c.BaseCtx, chromedp.WithTargetID(c.Id))
-			InterceptResponsePlus(newTabCtx, tIdCh)
+			//InterceptResponsePlus(newTabCtx, tIdCh)
+			InterceptResponse(newTabCtx, tIdCh, urlCh)
 			chromedp.Run(newTabCtx)
 
 			time.Sleep(1 * time.Second)
 		}
 	}()
 
+	go func() {
+		for u := range urlCh {
+			log.Printf("接收到url [%v]", u)
+		}
+	}()
+
 	select {}
 }
 
-func InterceptResponse() func(event interface{}) {
-	return func(event interface{}) {
-		if ev, ok := event.(*network.EventResponseReceived); ok {
+func InterceptResponse(ctx context.Context, chT chan model.TargetId, chU chan string) {
+	chromedp.ListenTarget(ctx, func(event interface{}) {
+		switch ev := event.(type) {
+		case *network.EventRequestWillBeSent:
+			theUrl := ev.Request.URL
 			if ev.Type != network.ResourceTypeMedia {
-				return
+				break
 			}
-
-			respUrl := ev.Response.URL
-			log.Println("response url", respUrl)
-
-			if rose.StrAnyContains(respUrl, "mp3", "m4a") {
-
-				log.Println("1-拦截到音乐文件链接 ", respUrl)
-
+			if rose.StrAnyContains(theUrl, "mp3", "m4a") {
+				//log.Println("2-拦截到音乐文件链接 ", theUrl)
+				chU <- theUrl
 			}
+		case *target.EventTargetCreated:
+			c := chromedp.FromContext(ctx)
+			go func(theCtx context.Context, baseTarget *chromedp.Target, nowInfo *target.Info) {
+				if baseTarget.TargetID == nowInfo.OpenerID {
+					chT <- model.TargetId{
+						Id:      nowInfo.TargetID,
+						BaseCtx: theCtx,
+					}
+				}
+			}(ctx, c.Target, ev.TargetInfo)
 		}
-	}
+	})
 }
 
 func InterceptResponsePlus(ctx context.Context, ch chan model.TargetId) {
-	//eveMap := make(map[string]string)
+	eveMap := make(map[string]string)
 	chromedp.ListenTarget(ctx, func(event interface{}) {
 		switch ev := event.(type) {
 		case *network.EventRequestWillBeSent:
 
 			theUrl := ev.Request.URL
 
-			log.Println("请求url ", theUrl)
+			//log.Println("请求url ", theUrl)
 
 			if ev.Type != network.ResourceTypeMedia {
 				break
 			}
 
-			log.Println("the media url", theUrl)
+			//log.Println("the media url", theUrl)
+
+			reqID := ev.RequestID
+			eveKey := rose.Md5HashStr(reqID.String())
 
 			if rose.StrAnyContains(theUrl, "mp3", "m4a") {
 				log.Println("2-拦截到音乐文件链接 ", theUrl)
+				eveMap[eveKey] = theUrl
+
+				//
+
 			}
 
-			//reqID := ev.RequestID
-			//eveKey := rose.Md5HashStr(reqID.String())
-			//eveMap[eveKey]=
-
 		case *network.EventLoadingFinished:
-		//reqID := ev.RequestID
-		//eveKey := rose.Md5HashStr(reqID.String())
+			reqID := ev.RequestID
+			eveKey := rose.Md5HashStr(reqID.String())
 
-		//execCtx := cdp.WithExecutor(theCtx, chromedp.FromContext(theCtx).Target)
+			//execCtx := cdp.WithExecutor(theCtx, chromedp.FromContext(theCtx).Target)
 
-		//go func() {
-		//	c := chromedp.FromContext(ctx)
-		//	ctx := cdp.WithExecutor(ctx, c.Target)
-		//	if body, err := network.GetResponseBody(ev.RequestID).Do(ctx); err == nil {
-		//		data := string(body)
-		//
-		//		fmt.Println("----------得到内容↓↓↓↓↓↓↓↓↓---------------")
-		//		fmt.Println(data)
-		//		fmt.Println("----------得到内容↑↑↑↑↑↑↑↑↑---------------")
-		//		//res <- body
-		//	}
-		//}()
+			if v, ok := eveMap[eveKey]; ok {
+				delete(eveMap, eveKey)
+
+				go func(theCtx context.Context, url string) {
+					//	//execCtx := cdp.WithExecutor(theCtx, chromedp.FromContext(theCtx).Target)
+					//	if body, err := network.GetResponseBody(ev.RequestID).Do(execCtx); err == nil {
+					//		//data := string(body)
+					//
+					//		//fmt.Println("----------得到内容↓↓↓↓↓↓↓↓↓---------------")
+					//		//fmt.Println("body", len(data), len(body))
+					//		//fmt.Println("----------得到内容↑↑↑↑↑↑↑↑↑---------------")
+					//		//res <- body
+					//
+					//		//dec, data, _ := minimp3.DecodeFull(body)
+					//		//seconds := int64((len(data) - dec.SampleRate) * 8 / (dec.Kbps * 1000))
+					//
+					//		//dec, _ := mp3.NewDecoder(bytes.NewReader(body))
+					//
+					//		//streamer, format, err := mp3.Decode(io.NopCloser(bytes.NewBuffer(body)))
+					//		//if err != nil {
+					//		//	log.Println("error ", err)
+					//		//}
+					//		//
+					//		//length := format.SampleRate.D(streamer.Len())
+					//		//log.Println("second", length.Seconds())
+					//		//log.Printf("url [%v] size [%v] seconds [%v]", url, utils.FormatFileSize(body), length.Round(time.Second))
+					//	}
+					//
+				}(ctx, v)
+
+			}
+
+			//size := ev.EncodedDataLength
+			//log.Println("size ", size)
 
 		case *page.EventWindowOpen:
 			c := chromedp.FromContext(ctx)
@@ -181,7 +223,7 @@ func InterceptResponsePlus(ctx context.Context, ch chan model.TargetId) {
 				go func() {
 					ch <- model.TargetId{
 						Id:      tid,
-						Type:    "created",
+						Type:    1,
 						BaseCtx: ctx,
 					}
 				}()
@@ -193,7 +235,7 @@ func InterceptResponsePlus(ctx context.Context, ch chan model.TargetId) {
 			go func() {
 				ch <- model.TargetId{
 					Id:      tid,
-					Type:    "destroyed",
+					Type:    2,
 					BaseCtx: ctx,
 				}
 			}()
