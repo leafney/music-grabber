@@ -88,6 +88,9 @@ func main() {
 		}
 	}
 
+	// 禁用输入框
+	//searchInput.Disable()
+
 	searchBox := container.NewBorder(
 		nil, nil, nil, container.NewHBox(searchBtn), searchInput,
 	)
@@ -193,7 +196,8 @@ func main() {
 			obj.(*fyne.Container).Objects[0].(*widget.Label).SetText(u.Url)
 			obj.(*fyne.Container).Objects[1].(*widget.Button).OnTapped = func() {
 				log.Println("button click")
-				if err := chromedp.Run(u.Ctx, chromedp.Navigate(u.Url)); err != nil {
+				newTabCtx, _ := chromedp.NewContext(u.Ctx)
+				if err := chromedp.Run(newTabCtx, chromedp.Navigate(u.Url)); err != nil {
 					log.Printf("open error [%v]", err)
 				}
 			}
