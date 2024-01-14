@@ -99,10 +99,10 @@ func main() {
 	//	}),
 	//)
 
-	radio := widget.NewRadioGroup([]string{"NetEaseCloud music", "QQ music", "FangPi"}, func(s string) {
+	radio := widget.NewRadioGroup([]string{"NetEaseCloud", "QQ", "FangPi"}, func(s string) {
 		log.Println("choose", s)
 	})
-	radio.SetSelected("NetEaseCloud music")
+	radio.SetSelected("NetEaseCloud")
 	radio.Horizontal = true
 
 	webBox2 := container.NewHBox(radio)
