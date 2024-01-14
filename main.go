@@ -9,8 +9,10 @@
 package main
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
@@ -20,11 +22,13 @@ import (
 	"github.com/leafney/music-grabber/pkg/cdper"
 	"github.com/leafney/music-grabber/pkg/vars"
 	"github.com/leafney/rose"
+	"image/color"
 	"log"
 )
 
 var (
 	BrowserUrl = ""
+	Version    = "v0.1.0"
 )
 
 func main() {
@@ -32,7 +36,7 @@ func main() {
 	urlCh := make(chan model.UrlLink, 100)
 
 	a := app.New()
-	w := a.NewWindow("Music Grabber")
+	w := a.NewWindow(fmt.Sprintf("Music Grabber %v", Version))
 
 	//resDataList := binding.BindStringList(&[]string{})
 
@@ -89,7 +93,7 @@ func main() {
 	}
 
 	// 禁用输入框
-	//searchInput.Disable()
+	searchInput.Disable()
 
 	searchBox := container.NewBorder(
 		nil, nil, nil, container.NewHBox(searchBtn), searchInput,
@@ -101,7 +105,7 @@ func main() {
 	//
 	//)
 
-	webLabel := widget.NewLabel("Music Website:")
+	webLabel := widget.NewLabel("Website:")
 	//webBox := container.NewHBox(
 	//	widget.NewCheck("fangpi", func(v bool) {
 	//
@@ -133,20 +137,12 @@ func main() {
 	radio.SetSelected("NetEaseCloud")
 	radio.Horizontal = true
 
-	webBox2 := container.NewHBox(radio)
+	webBox := container.NewVBox(radio)
 
-	//hello := widget.NewLabel("Hello Fyne!")
-	//(container.NewVBox(
-	//
-	//	widget.NewButton("Browser", func() {
-	//		//hello.SetText("Welcome!")
-	//		cdper.StartBrowser()
-	//	}),
-	//))
+	emptyBox := canvas.NewRectangle(color.Transparent)
+	emptyBox.Resize(fyne.NewSize(100, 10))
 
 	resultClear := widget.NewButton("Clear Result", func() {
-		//resDataList.Set([]string{})
-		//resList.Set([]interface{}{})
 		resList.Set(nil)
 	})
 	//resultClear.Disable()
@@ -165,7 +161,7 @@ func main() {
 	//)
 
 	// test 2
-	resultList := widget.NewListWithData(resList,
+	resultBox := widget.NewListWithData(resList,
 		func() fyne.CanvasObject {
 			return container.NewBorder(
 				nil, nil, nil,
@@ -223,17 +219,17 @@ func main() {
 
 	boxList := container.NewVBox(
 		webLabel,
-		//webBox,
-		webBox2,
+		webBox,
+		widget.NewSeparator(),
 		searchLabel,
 		searchBox,
-
+		emptyBox,
+		widget.NewSeparator(),
 		resultLabel,
-		//resultBox,
 	)
 
-	w.SetContent(container.NewBorder(boxList, nil, nil, nil, resultList))
-	w.Resize(fyne.NewSize(540, 540))
+	w.SetContent(container.NewBorder(boxList, nil, nil, nil, resultBox))
+	w.Resize(fyne.NewSize(540, 600))
 	w.SetFixedSize(true)
 	w.ShowAndRun()
 }
