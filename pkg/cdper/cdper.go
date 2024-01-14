@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func StartBrowser(urlCh chan model.UrlLink) {
+func StartBrowser(url string, urlCh chan model.UrlLink) {
 	opts := []chromedp.ExecAllocatorOption{
 
 		chromedp.NoFirstRun,
@@ -54,7 +54,8 @@ func StartBrowser(urlCh chan model.UrlLink) {
 	// 启动Chrome浏览器
 	err := chromedp.Run(ctx,
 		network.Enable(),
-		chromedp.Navigate("https://www.fangpi.net/"),
+		chromedp.Navigate(url),
+		//chromedp.Navigate("https://www.fangpi.net/"),
 		//chromedp.Navigate("https://y.qq.com/"),
 	)
 	if err != nil {
@@ -96,7 +97,9 @@ func StartBrowser(urlCh chan model.UrlLink) {
 			newTabCtx, _ := chromedp.NewContext(c.BaseCtx, chromedp.WithTargetID(c.Id))
 			//InterceptResponsePlus(newTabCtx, tIdCh)
 			InterceptResponse(newTabCtx, tIdCh, urlCh)
-			chromedp.Run(newTabCtx)
+			if err := chromedp.Run(newTabCtx); err != nil {
+				log.Println("run error", err)
+			}
 
 			time.Sleep(1 * time.Second)
 		}
@@ -119,7 +122,7 @@ func InterceptResponse(ctx context.Context, chT chan model.TargetId, chU chan mo
 			if ev.Type != network.ResourceTypeMedia {
 				break
 			}
-			if rose.StrAnyContains(theUrl, "mp3", "m4a") {
+			if rose.StrAnyContains(theUrl, vars.MusicExtList...) {
 				//log.Println("2-拦截到音乐文件链接 ", theUrl)
 				chU <- model.UrlLink{Url: theUrl, Ctx: ctx}
 			}

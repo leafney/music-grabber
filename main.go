@@ -9,15 +9,26 @@
 package main
 
 import (
+	"fmt"
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/chromedp/chromedp"
 	"github.com/leafney/music-grabber/model"
 	"github.com/leafney/music-grabber/pkg/cdper"
+	"github.com/leafney/music-grabber/pkg/vars"
+	"github.com/leafney/rose"
+	"image/color"
 	"log"
+)
+
+var (
+	BrowserUrl = ""
+	Version    = "v0.2.0"
 )
 
 func main() {
@@ -25,7 +36,10 @@ func main() {
 	urlCh := make(chan model.UrlLink, 100)
 
 	a := app.New()
-	w := a.NewWindow("Music Grabber")
+	icon, _ := fyne.LoadResourceFromPath("music.png")
+	a.SetIcon(icon)
+
+	w := a.NewWindow(fmt.Sprintf("Music Grabber %v", Version))
 
 	//resDataList := binding.BindStringList(&[]string{})
 
@@ -42,7 +56,12 @@ func main() {
 
 	searchBtn := widget.NewButton("Open", func() {
 
-		go cdper.StartBrowser(urlCh)
+		if rose.StrIsEmpty(BrowserUrl) {
+			log.Println("未选择")
+			return
+		}
+
+		go cdper.StartBrowser(BrowserUrl, urlCh)
 
 		//resDataList.Append("hello")
 
@@ -76,6 +95,9 @@ func main() {
 		}
 	}
 
+	// 禁用输入框
+	searchInput.Disable()
+
 	searchBox := container.NewBorder(
 		nil, nil, nil, container.NewHBox(searchBtn), searchInput,
 	)
@@ -86,7 +108,7 @@ func main() {
 	//
 	//)
 
-	webLabel := widget.NewLabel("Music Website:")
+	webLabel := widget.NewLabel("Website:")
 	//webBox := container.NewHBox(
 	//	widget.NewCheck("fangpi", func(v bool) {
 	//
@@ -99,26 +121,31 @@ func main() {
 	//	}),
 	//)
 
-	radio := widget.NewRadioGroup([]string{"NetEaseCloud", "QQ", "FangPi"}, func(s string) {
-		log.Println("choose", s)
+	radio := widget.NewRadioGroup([]string{"NetEaseCloud", "QQ", "TongZhong", "GeQuBao", "FangPi"}, func(s string) {
+		switch s {
+		case "NetEaseCloud":
+			BrowserUrl = vars.MusicWebHomeNetEaseCloud
+		case "QQ":
+			BrowserUrl = vars.MusicWebHomeQQ
+		case "TongZhong":
+			BrowserUrl = vars.MusicWebHomeTonZhon
+		case "GeQuBao":
+			BrowserUrl = vars.MusicWebHomeGeQuBao
+		case "FangPi":
+			BrowserUrl = vars.MusicWebHomeFangPi
+		default:
+			BrowserUrl = vars.MusicWebHomeNetEaseCloud
+		}
 	})
 	radio.SetSelected("NetEaseCloud")
 	radio.Horizontal = true
 
-	webBox2 := container.NewHBox(radio)
+	webBox := container.NewVBox(radio)
 
-	//hello := widget.NewLabel("Hello Fyne!")
-	//(container.NewVBox(
-	//
-	//	widget.NewButton("Browser", func() {
-	//		//hello.SetText("Welcome!")
-	//		cdper.StartBrowser()
-	//	}),
-	//))
+	spaceBox := canvas.NewRectangle(color.Transparent)
+	spaceBox.Resize(fyne.NewSize(100, 12))
 
 	resultClear := widget.NewButton("Clear Result", func() {
-		//resDataList.Set([]string{})
-		//resList.Set([]interface{}{})
 		resList.Set(nil)
 	})
 	//resultClear.Disable()
@@ -137,7 +164,7 @@ func main() {
 	//)
 
 	// test 2
-	resultList := widget.NewListWithData(resList,
+	resultBox := widget.NewListWithData(resList,
 		func() fyne.CanvasObject {
 			return container.NewBorder(
 				nil, nil, nil,
@@ -168,7 +195,8 @@ func main() {
 			obj.(*fyne.Container).Objects[0].(*widget.Label).SetText(u.Url)
 			obj.(*fyne.Container).Objects[1].(*widget.Button).OnTapped = func() {
 				log.Println("button click")
-				if err := chromedp.Run(u.Ctx, chromedp.Navigate(u.Url)); err != nil {
+				newTabCtx, _ := chromedp.NewContext(u.Ctx)
+				if err := chromedp.Run(newTabCtx, chromedp.Navigate(u.Url)); err != nil {
 					log.Printf("open error [%v]", err)
 				}
 			}
@@ -194,17 +222,24 @@ func main() {
 
 	boxList := container.NewVBox(
 		webLabel,
-		//webBox,
-		webBox2,
+		webBox,
+		widget.NewSeparator(),
 		searchLabel,
 		searchBox,
-
+		spaceBox,
+		widget.NewSeparator(),
 		resultLabel,
-		//resultBox,
 	)
 
-	w.SetContent(container.NewBorder(boxList, nil, nil, nil, resultList))
-	w.Resize(fyne.NewSize(540, 540))
+	w.SetContent(container.NewBorder(boxList, nil, nil, nil, resultBox))
+	w.Resize(fyne.NewSize(540, 600))
 	w.SetFixedSize(true)
 	w.ShowAndRun()
+}
+
+func showDialog(w fyne.Window) {
+
+	content := container.NewVBox()
+
+	dialog.NewCustom("Tips", "Close", content, w)
 }
