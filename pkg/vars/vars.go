@@ -12,3 +12,15 @@ const (
 	MacOSChromePath string = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 	MacOSEdgePath   string = "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge"
 )
+
+const (
+	MusicWebHomeNetEaseCloud = "https://music.163.com/"
+	MusicWebHomeQQ           = "https://y.qq.com/"
+	MusicWebHomeTonZhon      = "https://tonzhon.com/"
+	MusicWebHomeFangPi       = "https://www.fangpi.net/"
+	MusicWebHomeGeQuBao      = "https://www.gequbao.com/"
+)
+
+var (
+	MusicExtList = []string{"mp3", "m4a"}
+)

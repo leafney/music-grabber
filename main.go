@@ -13,11 +13,18 @@ import (
 	"fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"github.com/chromedp/chromedp"
 	"github.com/leafney/music-grabber/model"
 	"github.com/leafney/music-grabber/pkg/cdper"
+	"github.com/leafney/music-grabber/pkg/vars"
+	"github.com/leafney/rose"
 	"log"
+)
+
+var (
+	BrowserUrl = ""
 )
 
 func main() {
@@ -42,7 +49,12 @@ func main() {
 
 	searchBtn := widget.NewButton("Open", func() {
 
-		go cdper.StartBrowser(urlCh)
+		if rose.StrIsEmpty(BrowserUrl) {
+			log.Println("未选择")
+			return
+		}
+
+		go cdper.StartBrowser(BrowserUrl, urlCh)
 
 		//resDataList.Append("hello")
 
@@ -99,8 +111,21 @@ func main() {
 	//	}),
 	//)
 
-	radio := widget.NewRadioGroup([]string{"NetEaseCloud", "QQ", "FangPi"}, func(s string) {
-		log.Println("choose", s)
+	radio := widget.NewRadioGroup([]string{"NetEaseCloud", "QQ", "TongZhong", "GeQuBao", "FangPi"}, func(s string) {
+		switch s {
+		case "NetEaseCloud":
+			BrowserUrl = vars.MusicWebHomeNetEaseCloud
+		case "QQ":
+			BrowserUrl = vars.MusicWebHomeQQ
+		case "TongZhong":
+			BrowserUrl = vars.MusicWebHomeTonZhon
+		case "GeQuBao":
+			BrowserUrl = vars.MusicWebHomeGeQuBao
+		case "FangPi":
+			BrowserUrl = vars.MusicWebHomeFangPi
+		default:
+			BrowserUrl = vars.MusicWebHomeNetEaseCloud
+		}
 	})
 	radio.SetSelected("NetEaseCloud")
 	radio.Horizontal = true
@@ -207,4 +232,11 @@ func main() {
 	w.Resize(fyne.NewSize(540, 540))
 	w.SetFixedSize(true)
 	w.ShowAndRun()
+}
+
+func showDialog(w fyne.Window) {
+
+	content := container.NewVBox()
+
+	dialog.NewCustom("Tips", "Close", content, w)
 }
