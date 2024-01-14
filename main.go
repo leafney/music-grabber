@@ -37,6 +37,8 @@ func main() {
 
 	a := app.New()
 	w := a.NewWindow(fmt.Sprintf("Music Grabber %v", Version))
+	icon, _ := fyne.LoadResourceFromPath("music.png")
+	w.SetIcon(icon)
 
 	//resDataList := binding.BindStringList(&[]string{})
 
@@ -139,8 +141,8 @@ func main() {
 
 	webBox := container.NewVBox(radio)
 
-	emptyBox := canvas.NewRectangle(color.Transparent)
-	emptyBox.Resize(fyne.NewSize(100, 10))
+	spaceBox := canvas.NewRectangle(color.Transparent)
+	spaceBox.Resize(fyne.NewSize(100, 12))
 
 	resultClear := widget.NewButton("Clear Result", func() {
 		resList.Set(nil)
@@ -223,7 +225,7 @@ func main() {
 		widget.NewSeparator(),
 		searchLabel,
 		searchBox,
-		emptyBox,
+		spaceBox,
 		widget.NewSeparator(),
 		resultLabel,
 	)
