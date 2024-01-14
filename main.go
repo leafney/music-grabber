@@ -28,7 +28,7 @@ import (
 
 var (
 	BrowserUrl = ""
-	Version    = "v0.1.0"
+	Version    = "v0.2.0"
 )
 
 func main() {
@@ -36,9 +36,10 @@ func main() {
 	urlCh := make(chan model.UrlLink, 100)
 
 	a := app.New()
-	w := a.NewWindow(fmt.Sprintf("Music Grabber %v", Version))
 	icon, _ := fyne.LoadResourceFromPath("music.png")
-	w.SetIcon(icon)
+	a.SetIcon(icon)
+
+	w := a.NewWindow(fmt.Sprintf("Music Grabber %v", Version))
 
 	//resDataList := binding.BindStringList(&[]string{})
 
