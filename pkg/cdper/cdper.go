@@ -21,7 +21,7 @@ import (
 	"time"
 )
 
-func StartBrowser() {
+func StartBrowser(urlCh chan model.UrlLink) {
 	opts := []chromedp.ExecAllocatorOption{
 
 		chromedp.NoFirstRun,
@@ -40,7 +40,7 @@ func StartBrowser() {
 	//chromedp.ListenTarget(ctx, InterceptResponse())
 
 	tIdCh := make(chan model.TargetId, 100)
-	urlCh := make(chan string, 100)
+	//urlCh := make(chan string, 100)
 
 	InterceptResponse(ctx, tIdCh, urlCh)
 
@@ -102,16 +102,16 @@ func StartBrowser() {
 		}
 	}()
 
-	go func() {
-		for u := range urlCh {
-			log.Printf("接收到url [%v]", u)
-		}
-	}()
+	//go func() {
+	//	for u := range urlCh {
+	//		log.Printf("接收到url [%v]", u)
+	//	}
+	//}()
 
 	select {}
 }
 
-func InterceptResponse(ctx context.Context, chT chan model.TargetId, chU chan string) {
+func InterceptResponse(ctx context.Context, chT chan model.TargetId, chU chan model.UrlLink) {
 	chromedp.ListenTarget(ctx, func(event interface{}) {
 		switch ev := event.(type) {
 		case *network.EventRequestWillBeSent:
@@ -121,7 +121,7 @@ func InterceptResponse(ctx context.Context, chT chan model.TargetId, chU chan st
 			}
 			if rose.StrAnyContains(theUrl, "mp3", "m4a") {
 				//log.Println("2-拦截到音乐文件链接 ", theUrl)
-				chU <- theUrl
+				chU <- model.UrlLink{Url: theUrl, Ctx: ctx}
 			}
 		case *target.EventTargetCreated:
 			c := chromedp.FromContext(ctx)
